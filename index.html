@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>陽彗ログ v0.6.1</title>
+<title>陽彗ログ v1.0</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#20242d;--text:#eef1f7;--muted:#a7afc1;--line:#313744;--accent:#8ab4ff;--danger:#ff7b7b;--ok:#8df0b3;--warn:#ffd27d;--btn:#2c3340}
 *{box-sizing:border-box}
@@ -44,8 +44,8 @@ button.toggleOn{background:var(--accent);color:#07101e;border-color:var(--accent
 </head>
 <body>
 <header>
-<h1>陽彗ログ 試作品 v0.6.1</h1>
-<div class="sub">最終ターン+1自動入力 / 100体DB信頼度ラベル / スマホUI / 辛口スコア</div>
+<h1>陽彗ログ v1.0</h1>
+<div class="sub">実用版：スマホ入力UI / 66pt制限 / メガ記録 / 簡易評価レンジ / 上位100候補DB / GitHub Pages対応</div>
 </header>
 <main>
 <div class="tabs">
@@ -152,6 +152,12 @@ button.toggleOn{background:var(--accent);color:#07101e;border-color:var(--accent
 <div class="card">
 <h2>データ信頼度メモ</h2>
 <p class="small">v0.6.1では上位100候補に usageRank / sourceConfidence / sourceTags を付与。ポケ徹を最優先にし、GameWith・Game8・アルテマ等で2サイト以上一致した候補から高信頼に昇格する方針。技・特性・型は入力補助で、完全な合法性保証ではありません。</p>
+</div>
+
+
+<div class="card">
+<h2>v1.0 実用版メモ</h2>
+<p class="small">この版は、試合後ログをスマホで記録して陽彗4.0へ送るための実用版です。簡易スコアは断定点ではなく、記録量に応じて幅を持つ評価レンジとして扱います。</p>
 </div>
 
 <div class="card">
@@ -278,17 +284,145 @@ function clearTurnForm(clearActive){["myAction","oppAction","mySwitchTo","oppSwi
 function fieldText(f){return `こちら側:${(f.mySide||[]).join(",")||"なし"} / 相手側:${(f.oppSide||[]).join(",")||"なし"} / 全体:${(f.global||[]).join(",")||"なし"}`}
 function deleteTurn(idx){if(!confirm("このターンを削除する？"))return;state.battle.turns.splice(idx,1);persist();renderTurnList();updateNextTurnNo()}
 function saveTurnMemo(idx){state.battle.turns[idx].memo=$("memoEdit"+idx).value.trim();state.battle.turns[idx].resultTag=$("tagEdit"+idx).value;state.battle.turns[idx].purpose=$("purposeEdit"+idx).value;persist();renderTurnList();updateNextTurnNo()}
-function renderTurnList(){const box=$("turnList");if(!state.battle.turns.length){box.innerHTML='<p class="small">まだターンがない。</p>';return}const purposes=["未設定","相手の勝ち筋を止める","削る","勝ち駒を着地させる","詰める","様子見","切る","未来負債っぽい","要検算"];const tags=["未評価","勝ち筋に繋がった","止めただけ","未来負債になった","プレミっぽい","下振れ","要検算"];box.innerHTML=state.battle.turns.map((t,idx)=>`<div class="rowcard"><div class="turnHead"><span class="turnNo">Turn ${esc(t.no)}</span><button class="danger" onclick="deleteTurn(${idx})">削除</button></div><div><span class="pill">${esc(t.myActive||"こちら不明")}</span> vs <span class="pill">${esc(t.oppActive||"相手不明")}</span></div><div class="hr"></div><div>こちら：${t.myMega?"<strong>メガ</strong> / ":""}<strong>${esc(t.myAction||"")}</strong>${t.mySwitchTo?` → ${esc(t.mySwitchTo)}`:""}　相手：${t.oppMega?"<strong>メガ</strong> / ":""}<strong>${esc(t.oppAction||"")}</strong>${t.oppSwitchMemo?` → ${esc(t.oppSwitchMemo)}`:""}</div><div class="small">HP：こちら実数値 ${esc(t.myHpBefore)}→${esc(t.myHpAfter)} / 相手 ${esc(t.oppHpBefore)}%→${esc(t.oppHpAfter)}%</div><div class="small">状態：こちら ${(t.myStatus||[]).join(", ")||"なし"} / 相手 ${(t.oppStatus||[]).join(", ")||"なし"}</div><div class="small">場状態：${fieldText(t.fieldAfter||{mySide:[],oppSide:[],global:[]})}</div>${t.state?`<div class="small">補足：${esc(t.state)}</div>`:""}<div class="grid g2"><div><label>目的・後編集</label><select id="purposeEdit${idx}">${purposes.map(x=>`<option ${x===t.purpose?"selected":""}>${x}</option>`).join("")}</select></div><div><label>結果評価・後編集</label><select id="tagEdit${idx}">${tags.map(x=>`<option ${x===t.resultTag?"selected":""}>${x}</option>`).join("")}</select></div></div><label>ターンメモ・後編集</label><textarea id="memoEdit${idx}">${esc(t.memo||"")}</textarea><button class="ok" onclick="saveTurnMemo(${idx})">このターンのメモを保存</button></div>`).join("")}
+function renderTurnList(){const box=$("turnList");if(!state.battle.turns.length){box.innerHTML='<p class="small">まだターンがない。</p>';return}const purposes=["未設定","相手の勝ち筋を止める","削る","勝ち駒を着地させる","詰める","様子見","切る","未来負債っぽい","要検算"];const tags=["未評価","勝ち筋に繋がった","止めただけ","未来負債になった","プレミっぽい","下振れ","要検算"];box.innerHTML=state.battle.turns.map((t,idx)=>`<div class="rowcard"><div class="turnHead"><span class="turnNo">Turn ${esc(t.no)}</span><button class="danger" onclick="deleteTurn(${idx})">削除</button></div><div><span class="pill">${esc(t.myActive||"こちら不明")}</span> vs <span class="pill">${esc(t.oppActive||"相手不明")}</span></div><div class="hr"></div><div>こちら：${t.myMega?"<strong>メガ</strong> / ":""}<strong>${esc(t.myAction||"")}</strong>${t.mySwitchTo?` → ${esc(t.mySwitchTo)}`:""}　相手：${t.oppMega?"<strong>メガ</strong> / ":""}<strong>${esc(t.oppAction||"")}</strong>${t.oppSwitchMemo?` → ${esc(t.oppSwitchMemo)}`:""}</div><div class="small">HP：こちら実数値 ${esc(t.myHpBefore)}→${esc(t.myHpAfter)} / 相手 ${esc(t.oppHpBefore)}%→${esc(t.oppHpAfter)}%</div><div class="small">状態：こちら ${(t.myStatus||[]).join(", ")||"なし"} / 相手 ${(t.oppStatus||[]).join(", ")||"なし"}</div><div class="small">場状態：${fieldText(t.fieldAfter||{mySide:[],oppSide:[],global:[]})}</div>${t.state?`<div class="small">補足：${esc(t.state)}</div>`:""}<div class="grid g2"><div><label>目的・後編集</label><select id="purposeEdit${idx}">${purposes.map(x=>`<option ${x===t.purpose?"selected":""}>${x}</option>`).join("")}</select></div><div><label>結果評価・後編集</label><select id="tagEdit${idx}">${tags.map(x=>`<option ${x===t.resultTag?"selected":""}>${x}</option>`).join("")}</select></div></div><label>ターンメモ・後編集</label><textarea id="memoEdit${idx}">${esc(t.memo||"")}</textarea><button class="ok" onclick="saveTurnMemo(${idx})">後編集を保存</button></div>`).join("")}
 function loadSummaryToForm(){const s=state.battle.summary||{};$("battleResult").value=state.battle.result||"未記録";$("plannedWincon").value=s.plannedWincon||"";$("actualReason").value=s.actualReason||"";$("suspiciousTurn").value=s.suspiciousTurn||"";$("lossClass").value=s.lossClass||"未分類";$("nextRule").value=s.nextRule||"";$("freeMemo").value=s.freeMemo||""}
 function saveSummary(){state.battle.result=$("battleResult").value;state.battle.summary={plannedWincon:$("plannedWincon").value.trim(),actualReason:$("actualReason").value.trim(),suspiciousTurn:$("suspiciousTurn").value.trim(),lossClass:$("lossClass").value,nextRule:$("nextRule").value.trim(),freeMemo:$("freeMemo").value.trim()};persist();renderScore();setActiveTab("score")}
-function calcScore(){const turns=state.battle.turns||[];const result=state.battle.result;const tags=turns.map(t=>t.resultTag);const connected=tags.filter(x=>x==="勝ち筋に繋がった").length;const stop=turns.filter(t=>t.purpose==="相手の勝ち筋を止める").length;const debt=tags.filter(x=>x==="未来負債になった").length;const miss=tags.filter(x=>x==="プレミっぽい").length;const check=tags.filter(x=>x==="要検算").length;const finish=turns.filter(t=>t.purpose==="詰める").length;const fieldLogged=turns.filter(t=>t.fieldAfter&&(t.fieldAfter.mySide.length||t.fieldAfter.oppSide.length||t.fieldAfter.global.length)).length;const hpLogged=turns.filter(t=>(t.myHpBefore||t.myHpAfter||t.oppHpBefore||t.oppHpAfter)).length;const memo=turns.filter(t=>t.memo).length;let reasons=[],content=0,quality=0;const wc=Math.min(25,connected*4);content+=wc;if(wc)reasons.push(`+${wc} 勝ち筋接続 ${connected}回`);const st=Math.min(20,stop*6);content+=st;if(st)reasons.push(`+${st} 相手勝ち筋停止 ${stop}回`);const fin=Math.min(15,finish*4);content+=fin;if(fin)reasons.push(`+${fin} 詰め/回収ターン ${finish}回`);let cost=20-Math.min(20,debt*7+miss*9+check*3);content+=cost;reasons.push(`${cost>=15?"+":""}${cost} 不可逆コスト管理`);let wb=0;if(result==="勝ち"||result==="降参勝ち"||result==="切断勝ち")wb=8;if(result==="負け"||result==="降参負け"||result==="切断負け")wb=2;content+=wb;reasons.push(`+${wb} 勝敗補正`);quality+=Math.min(35,memo*4);if(memo)reasons.push(`+${Math.min(35,memo*4)} メモ記録 ${memo}ターン`);quality+=Math.min(25,fieldLogged*5);if(fieldLogged)reasons.push(`+${Math.min(25,fieldLogged*5)} 場状態記録 ${fieldLogged}ターン`);quality+=Math.min(25,hpLogged*4);if(hpLogged)reasons.push(`+${Math.min(25,hpLogged*4)} HP記録 ${hpLogged}ターン`);if(state.battle.summary?.nextRule){quality+=15;reasons.push("+15 次回ルールあり")}else{reasons.push("- 次回ルール未入力")}content=Math.max(0,Math.min(100,content));quality=Math.max(0,Math.min(100,quality));let total=Math.round(content*0.7+quality*0.3);if(total>95&&(check>0||hpLogged<turns.length))total=95;if(total>92&&turns.length<6)total=92;return{score:total,content:Math.round(content),quality:Math.round(quality),reasons,connected,debt,miss,check,fieldLogged,memo,hpLogged};}
-function renderScore(){const r=calcScore();$("scoreBox").innerHTML=`<div class="scoreBig">${r.score} / 100</div><div class="scoreGrid"><div class="rowcard"><strong>内訳</strong><div>試合内容：${r.content} / 100</div><div>ログ品質：${r.quality} / 100</div><div>勝ち筋接続：${r.connected}</div><div>未来負債：${r.debt}</div><div>プレミ候補：${r.miss}</div><div>要検算：${r.check}</div><div>HP記録：${r.hpLogged}</div><div>場状態記録：${r.fieldLogged}</div></div><div class="rowcard"><strong>根拠</strong>${r.reasons.map(x=>`<div class="small">・${esc(x)}</div>`).join("")}</div></div>`}
+
+function calcScore(){
+  const turns=(state.battle.turns||[]);
+  const result=state.battle.result||"未記録";
+  const summary=state.battle.summary||{};
+  const tags=turns.map(t=>t.resultTag);
+  const connected=tags.filter(x=>x==="勝ち筋に繋がった").length;
+  const stop=turns.filter(t=>t.purpose==="相手の勝ち筋を止める").length;
+  const finish=turns.filter(t=>t.purpose==="詰める").length;
+  const debt=tags.filter(x=>x==="未来負債になった").length;
+  const miss=tags.filter(x=>x==="プレミっぽい").length;
+  const check=tags.filter(x=>x==="要検算").length;
+  const fieldLogged=turns.filter(t=>t.fieldAfter&&(t.fieldAfter.mySide.length||t.fieldAfter.oppSide.length||t.fieldAfter.global.length)).length;
+  const hpLogged=turns.filter(t=>(t.myHpBefore||t.myHpAfter||t.oppHpBefore||t.oppHpAfter)).length;
+  const memo=turns.filter(t=>t.memo).length;
+
+  let content=0;
+  let reasons=[];
+  let confidenceReasons=[];
+
+  const wc=Math.min(30, connected*5);
+  content+=wc;
+  if(wc) reasons.push(`勝ち筋接続：${connected}回を確認`);
+
+  const st=Math.min(22, stop*7);
+  content+=st;
+  if(st) reasons.push(`相手勝ち筋停止：${stop}回を確認`);
+
+  const fin=Math.min(18, finish*5);
+  content+=fin;
+  if(fin) reasons.push(`詰め/回収：${finish}回を確認`);
+
+  let cost=20-Math.min(20, debt*7+miss*9+check*3);
+  content+=cost;
+  if(debt||miss||check){
+    reasons.push(`不可逆コスト管理：未来負債${debt} / プレミ候補${miss} / 要検算${check}`);
+  } else {
+    reasons.push("不可逆コスト管理：明確な未来負債・プレミ候補は少ない");
+  }
+
+  let resultBonus=0;
+  if(["勝ち","降参勝ち","切断勝ち"].includes(result)) resultBonus=8;
+  else if(["負け","降参負け","切断負け"].includes(result)) resultBonus=2;
+  else resultBonus=4;
+  content+=resultBonus;
+  reasons.push(`勝敗補正：${result}`);
+
+  content=Math.max(0,Math.min(100,Math.round(content)));
+
+  // ログ品質は加点ではなく「評価幅・信頼度」に使う
+  let reliability=0;
+  if(turns.length>=8) reliability+=25;
+  else if(turns.length>=5) reliability+=18;
+  else if(turns.length>=3) reliability+=12;
+  else reliability+=5;
+
+  if(memo>=turns.length && turns.length>0) reliability+=20;
+  else if(memo>=Math.ceil(turns.length/2)) reliability+=14;
+  else if(memo>0) reliability+=8;
+
+  if(fieldLogged>0) reliability+=15;
+  if(hpLogged>=Math.ceil(turns.length/2) && turns.length>0) reliability+=20;
+  else if(hpLogged>0) reliability+=10;
+
+  if(summary.nextRule) reliability+=15;
+  if(summary.actualReason) reliability+=10;
+  reliability=Math.max(0,Math.min(100,Math.round(reliability)));
+
+  if(turns.length<5) confidenceReasons.push("重要場面ログまたは短縮ログのため、評価幅を広めに表示");
+  if(hpLogged===0) confidenceReasons.push("HP推移が未記録のため、耐久・乱数まわりは断定しない");
+  if(fieldLogged===0) confidenceReasons.push("場状態記録が少ないため、ステロ・天候・壁の検算は限定的");
+  if(check>0) confidenceReasons.push("要検算ターンがあるため上限を抑制");
+  if(debt>0 || miss>0) confidenceReasons.push("未来負債/プレミ候補があるため内容スコアを抑制");
+  if(summary.nextRule) confidenceReasons.push("次回ルールが入力されており、改善点は明確");
+
+  // 信頼度に応じてレンジ化。記録不足は直接減点しない。
+  let width = reliability>=85 ? 2 : reliability>=65 ? 4 : reliability>=45 ? 7 : 10;
+  if(turns.length<5) width=Math.max(width,6);
+  if(hpLogged===0) width=Math.max(width,5);
+  let low=Math.max(0, content-width);
+  let high=Math.min(100, content+Math.ceil(width/2));
+
+  // 明らかな上質勝ちログでも100張り付きは避ける
+  if(high>96 && reliability<90) high=96;
+  if(high>94 && turns.length<6) high=94;
+
+  const label = high>=90 ? "A〜A+相当" : high>=82 ? "A-〜A相当" : high>=74 ? "B+〜A-相当" : high>=65 ? "B帯" : "要検討";
+
+  return {score:content, low, high, reliability, label, reasons, confidenceReasons, connected, stop, finish, debt, miss, check, fieldLogged, hpLogged, memo, turns:turns.length};
+}
+
+
+function renderScore(){
+  const r=calcScore();
+  const scoreText = r.low===r.high ? `${r.score} / 100` : `${r.low}〜${r.high} / 100`;
+  $("scoreBox").innerHTML=
+    `<div class="scoreBig">${scoreText}</div>
+     <div class="small">評価帯：${esc(r.label)}　評価信頼度：${r.reliability} / 100</div>
+     <div class="scoreGrid">
+       <div class="rowcard">
+         <strong>内容チェック</strong>
+         <div>勝ち筋接続：${r.connected}</div>
+         <div>相手勝ち筋停止：${r.stop}</div>
+         <div>詰め/回収：${r.finish}</div>
+         <div>未来負債：${r.debt}</div>
+         <div>プレミ候補：${r.miss}</div>
+         <div>要検算：${r.check}</div>
+       </div>
+       <div class="rowcard">
+         <strong>判定根拠</strong>
+         ${r.reasons.map(x=>`<div class="small">・${esc(x)}</div>`).join("")}
+       </div>
+       <div class="rowcard">
+         <strong>評価信頼度</strong>
+         <div>記録ターン数：${r.turns}</div>
+         <div>HP記録：${r.hpLogged}</div>
+         <div>場状態記録：${r.fieldLogged}</div>
+         <div>メモ記録：${r.memo}</div>
+       </div>
+       <div class="rowcard">
+         <strong>幅を持たせた理由</strong>
+         ${(r.confidenceReasons.length?r.confidenceReasons:["記録が十分なため、単点寄りに評価可能"]).map(x=>`<div class="small">・${esc(x)}</div>`).join("")}
+       </div>
+     </div>`;
+}
+
 function generateExport(){state.battle.title=$("battleTitle")?.value.trim()||state.battle.title;if($("oppSix0")){state.battle.opponentSix=Array.from({length:6},(_,i)=>$("oppSix"+i).value.trim());state.battle.mySelection=Array.from({length:3},(_,i)=>$("mySel"+i).value);state.battle.oppSelection=Array.from({length:3},(_,i)=>$("oppSel"+i).value.trim())}state.battle.result=$("battleResult")?.value||state.battle.result;state.battle.summary={plannedWincon:$("plannedWincon")?.value.trim()||state.battle.summary.plannedWincon||"",actualReason:$("actualReason")?.value.trim()||state.battle.summary.actualReason||"",suspiciousTurn:$("suspiciousTurn")?.value.trim()||state.battle.summary.suspiciousTurn||"",lossClass:$("lossClass")?.value||state.battle.summary.lossClass||"未分類",nextRule:$("nextRule")?.value.trim()||state.battle.summary.nextRule||"",freeMemo:$("freeMemo")?.value.trim()||state.battle.summary.freeMemo||""};persist();const score=calcScore();const teamLine=state.team.pokemon.map(p=>p.name).filter(Boolean).join(" / ");const teamDetail=state.team.pokemon.filter(p=>p.name).map(p=>`- ${p.name} @ ${p.item}\n  特性：${p.ability}\n  性格：${p.nature}（${natureText(p.nature)}）\n  能力ポイント：${pointText(p)}\n  技：${(p.moves||[]).join(" / ")}\n  役割：${p.role}`).join("\n");const turns=state.battle.turns.map(t=>[`Turn ${t.no}`,`こちら：${t.myActive||"不明"}　相手：${t.oppActive||"不明"}`,`目的：${t.purpose}`,`こちら行動：${t.myMega?"メガ / ":""}${t.myAction||"未記録"}${t.mySwitchTo?` → ${t.mySwitchTo}`:""}`,`相手行動：${t.oppMega?"メガ / ":""}${t.oppAction||"未記録"}${t.oppSwitchMemo?` → ${t.oppSwitchMemo}`:""}`,`HP変化：こちら実数値 ${t.myHpBefore||"?"} → ${t.myHpAfter||"?"} / 相手 ${t.oppHpBefore||"?"}% → ${t.oppHpAfter||"?"}%`,`状態：こちら ${(t.myStatus||[]).join(", ")||"なし"} / 相手 ${(t.oppStatus||[]).join(", ")||"なし"}`,`場状態：${fieldText(t.fieldAfter||{mySide:[],oppSide:[],global:[]})}`,t.state?`補足：${t.state}`:"",`結果評価：${t.resultTag}`,t.memo?`メモ：${t.memo}`:""].filter(Boolean).join("\n")).join("\n\n");const s=state.battle.summary||{};const text=`【陽彗4.0 実戦ログ分析】
 
 【アプリ簡易スコア】
-${score.score} / 100
-根拠：
+${score.low}〜${score.high} / 100
+評価帯：${score.label}
+評価信頼度：${score.reliability} / 100
+判定根拠：
 ${score.reasons.map(x=>"・"+x).join("\n")}
+幅を持たせた理由：
+${score.confidenceReasons.map(x=>"・"+x).join("\n")}
 
 【試合情報】
 タイトル：${state.battle.title||"未記録"}
